@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NicoDose" />
+  <title>NicoDose</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #1a1a1a;
+      --teal: #00c9b1;
+      --teal-dim: #00796b;
+      --red: #ff3b3b;
+      --cream: #e8e0d0;
+      --muted: #555;
+      --border: #2a2a2a;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* GRAIN OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.6;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    header {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .app-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.12em;
+      color: var(--teal);
+      line-height: 1;
+    }
+
+    .app-sub {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .date-display {
+      text-align: right;
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      line-height: 1.6;
+    }
+
+    .date-display span {
+      display: block;
+      color: var(--cream);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    #syncStatus {
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    /* TAB NAV */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 0;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--teal);
+      border-bottom-color: var(--teal);
+    }
+
+    /* VIEWS */
+    .views { flex: 1; overflow: hidden; position: relative; }
+
+    .view {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .view.active { display: flex; }
+
+    /* SCROLLBAR */
+    .view::-webkit-scrollbar { width: 3px; }
+    .view::-webkit-scrollbar-track { background: transparent; }
+    .view::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* === VIEW 1: AUJOURD'HUI === */
+
+    .counter-block {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--teal);
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .counter-block::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--teal-dim), transparent);
+    }
+
+    .counter-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .counter-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5rem;
+      color: var(--teal);
+      line-height: 1;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 40px rgba(0,201,177,0.3);
+      transition: transform 0.1s;
+    }
+
+    .counter-number.bump {
+      transform: scale(1.08);
+    }
+
+    .counter-unit {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* BIG BUTTON */
+    .btn-dose {
+      position: relative;
+      width: 100%;
+      padding: 22px;
+      background: var(--bg3);
+      border: 1px solid var(--teal-dim);
+      color: var(--teal);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      transition: all 0.15s;
+      overflow: hidden;
+    }
+
+    .btn-dose::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--teal);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.15s;
+      z-index: 0;
+    }
+
+    .btn-dose:active::before { transform: scaleX(1); }
+    .btn-dose:active { color: var(--bg); }
+
+    .btn-dose span { position: relative; z-index: 1; }
+
+    .btn-dose .btn-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      margin-right: 10px;
+      vertical-align: middle;
+      position: relative;
+    }
+
+    .btn-dose .btn-icon::before,
+    .btn-dose .btn-icon::after {
+      content: '';
+      position: absolute;
+      background: currentColor;
+      border-radius: 2px;
+    }
+
+    .btn-dose .btn-icon::before {
+      width: 2px; height: 8px;
+      top: 3px; left: 6px;
+    }
+
+    .btn-dose .btn-icon::after {
+      width: 8px; height: 2px;
+      top: 7px; left: 3px;
+    }
+
+    /* TODAY LIST */
+    .section-title {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dose-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dose-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--teal-dim);
+      padding: 10px 14px;
+      animation: slideIn 0.25s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .dose-index {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      color: var(--teal);
+      min-width: 28px;
+    }
+
+    .dose-time {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: 0.05em;
+    }
+
+    .dose-time-seconds {
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .dose-delete {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 4px 6px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .dose-delete:active { color: var(--red); }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 10px;
+      opacity: 0.3;
+    }
+
+    /* === VIEW 2: CALENDRIER === */
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cal-nav button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--cream);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .cal-nav button:active { border-color: var(--teal); color: var(--teal); }
+
+    .cal-month-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.1em;
+      color: var(--cream);
+    }
+
+    .cal-grid-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-top: 4px;
+    }
+
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+
+    .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+
+    .cal-cell.today { border-color: var(--teal); }
+
+    .cal-cell.selected { background: var(--bg3); border-color: var(--teal); }
+
+    .cal-cell.has-data .cal-dot {
+      width: 4px; height: 4px;
+      background: var(--teal);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+    }
+
+    .cal-cell-num {
+      font-size: 0.7rem;
+      color: var(--cream);
+      font-weight: 700;
+    }
+
+    .cal-cell.today .cal-cell-num { color: var(--teal); }
+    .cal-cell.empty .cal-cell-num { color: transparent; }
+
+    .cal-cell-count {
+      font-size: 0.55rem;
+      color: var(--teal-dim);
+      margin-top: 1px;
+    }
+
+    /* DAY DETAIL */
+    .day-detail {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--teal-dim);
+      padding: 16px;
+    }
+
+    .day-detail-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.1em;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+
+    .day-detail-title span {
+      color: var(--teal);
+      font-size: 1.8rem;
+      margin-left: 8px;
+    }
+
+    /* === VIEW 3: STATS === */
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--teal-dim);
+      padding: 16px 14px;
+    }
+
+    .stat-card-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-card-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--teal);
+      line-height: 1;
+    }
+
+    .stat-card-sub {
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .chart-bar-container {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+
+    .chart-title {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 80px;
+    }
+
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-fill {
+      width: 100%;
+      background: var(--teal-dim);
+      border-top: 1px solid var(--teal);
+      min-height: 2px;
+      transition: height 0.4s ease;
+      position: relative;
+    }
+
+    .bar-fill.today-bar {
+      background: rgba(0,201,177,0.2);
+      border-color: var(--teal);
+    }
+
+    .bar-label {
+      font-size: 0.5rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .bar-val {
+      font-size: 0.55rem;
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    /* DOSE ACTIONS */
+    .dose-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .dose-edit {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 4px 6px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .dose-edit:active { color: var(--teal); }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--teal);
+      width: 100%;
+      max-width: 320px;
+      padding: 24px 20px 20px;
+      transform: translateY(12px);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.15em;
+      color: var(--teal);
+      margin-bottom: 4px;
+    }
+
+    .modal-sub {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+    }
+
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-field label {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .time-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+    }
+
+    .time-spinner button {
+      background: none;
+      border: none;
+      color: var(--teal);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      line-height: 1;
+      transition: background 0.15s;
+      width: 100%;
+    }
+
+    .time-spinner button:active { background: rgba(0,201,177,0.1); }
+
+    .time-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--cream);
+      letter-spacing: 0.05em;
+      padding: 4px 16px;
+      min-width: 60px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      line-height: 1.2;
+    }
+
+    .time-sep {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--teal-dim);
+      margin-top: 16px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-modal {
+      flex: 1;
+      padding: 12px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+
+    .btn-modal-cancel {
+      background: none;
+      color: var(--muted);
+    }
+
+    .btn-modal-cancel:active { border-color: var(--muted); color: var(--cream); }
+
+    .btn-modal-confirm {
+      background: var(--teal-dim);
+      border-color: var(--teal);
+      color: var(--cream);
+    }
+
+    .btn-modal-confirm:active { background: var(--teal); color: var(--bg); }
+
+    /* FLASH */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,201,177,0.06);
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+    }
+
+    .flash.show {
+      animation: flashAnim 0.3s ease;
+    }
+
+    @keyframes flashAnim {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* RIPPLE */
+    @keyframes ripple {
+      from { transform: scale(0); opacity: 0.4; }
+      to { transform: scale(4); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="app-title">NicoDose</div>
+        <div class="app-sub">Suivi des prises · Nicotine</div>
+      </div>
+      <div>
+        <div class="date-display" id="headerDate"></div>
+        <div id="syncStatus"><span style="color:var(--muted)">● Local</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">Aujourd'hui</button>
+    <button class="tab" onclick="switchTab('calendar')">Calendrier</button>
+    <button class="tab" onclick="switchTab('stats')">Statistiques</button>
+  </div>
+
+  <div class="views">
+
+    <!-- TODAY -->
+    <div class="view active" id="view-today">
+      <div class="counter-block">
+        <div class="counter-label">Prises aujourd'hui</div>
+        <div class="counter-number" id="counterNum">0</div>
+        <div class="counter-unit">doses enregistrées</div>
+      </div>
+
+      <button class="btn-dose" onclick="addDose()">
+        <span><i class="btn-icon"></i>Enregistrer une prise</span>
+      </button>
+
+      <div class="section-title">Historique du jour</div>
+
+      <div class="dose-list" id="todayList"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="view" id="view-calendar">
+      <div class="cal-nav">
+        <button onclick="calPrev()">&#8592;</button>
+        <div class="cal-month-label" id="calMonthLabel"></div>
+        <button onclick="calNext()">&#8594;</button>
+      </div>
+
+      <div class="cal-grid-header">
+        <div class="cal-day-name">Lu</div>
+        <div class="cal-day-name">Ma</div>
+        <div class="cal-day-name">Me</div>
+        <div class="cal-day-name">Je</div>
+        <div class="cal-day-name">Ve</div>
+        <div class="cal-day-name">Sa</div>
+        <div class="cal-day-name">Di</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div class="day-detail" id="dayDetail" style="display:none">
+        <div class="day-detail-title" id="dayDetailTitle"></div>
+        <div class="dose-list" id="dayDetailList"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="view" id="view-stats">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-card-label">Aujourd'hui</div>
+          <div class="stat-card-value" id="statToday">0</div>
+          <div class="stat-card-sub">prises</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Moyenne / jour</div>
+          <div class="stat-card-value" id="statAvg">0</div>
+          <div class="stat-card-sub">sur 7 jours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Cette semaine</div>
+          <div class="stat-card-value" id="statWeek">0</div>
+          <div class="stat-card-sub">prises totales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Record / jour</div>
+          <div class="stat-card-value" id="statMax">0</div>
+          <div class="stat-card-sub">prises max</div>
+        </div>
+      </div>
+
+      <div class="chart-bar-container">
+        <div class="chart-title">7 derniers jours</div>
+        <div class="bars" id="barsChart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<!-- EDIT TIME MODAL -->
+<div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">Modifier l'heure</div>
+    <div class="modal-sub" id="modalSub">Prise #01</div>
+    <div class="time-inputs">
+      <div class="time-field">
+        <label>Heures</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('h', 1)">▲</button>
+          <div class="time-val" id="editH">00</div>
+          <button onclick="spinTime('h', -1)">▼</button>
+        </div>
+      </div>
+      <div class="time-sep">:</div>
+      <div class="time-field">
+        <label>Minutes</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('m', 1)">▲</button>
+          <div class="time-val" id="editM">00</div>
+          <button onclick="spinTime('m', -1)">▼</button>
+        </div>
+      </div>
+      <div class="time-sep">:</div>
+      <div class="time-field">
+        <label>Secondes</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('s', 1)">▲</button>
+          <div class="time-val" id="editS">00</div>
+          <button onclick="spinTime('s', -1)">▼</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-modal btn-modal-cancel" onclick="closeEditModal()">Annuler</button>
+      <button class="btn-modal btn-modal-confirm" onclick="confirmEdit()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── GITHUB SYNC CONFIG ────────────────────────────────────────
+  // ⚠️  COLLE TON TOKEN ICI AVANT D'UPLOADER SUR GITHUB
+  const GH_TOKEN  = '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';
+  const GH_OWNER  = 'darkillusionaudio';
+  const GH_REPO   = 'nicodosetook';
+  const GH_FILE   = 'data.json';
+  const GH_BRANCH = 'main';
+  const GH_API    = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+
+  // ── STORAGE (localStorage = cache local) ──────────────────────
+  const STORAGE_KEY = 'nicodose_v1';
+  let ghFileSha = null;         // SHA du fichier sur GitHub (requis pour PUT)
+  let syncPending = false;
+  let syncTimer = null;
+
+  function loadData() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    scheduleSyncToGitHub(data);
+  }
+
+  // ── SYNC STATUS UI ────────────────────────────────────────────
+  function setSyncStatus(state) {
+    // state: 'idle' | 'syncing' | 'ok' | 'error'
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    const icons = { idle: '●', syncing: '↻', ok: '✓', error: '✕' };
+    const colors = { idle: 'var(--muted)', syncing: 'var(--teal)', ok: 'var(--teal)', error: 'var(--red)' };
+    const labels = { idle: 'Local', syncing: 'Sync...', ok: 'Synchronisé', error: 'Erreur sync' };
+    el.innerHTML = `<span style="color:${colors[state]}">${icons[state]} ${labels[state]}</span>`;
+  }
+
+  // ── PULL FROM GITHUB (au démarrage) ──────────────────────────
+  async function pullFromGitHub() {
+    if (GH_TOKEN === 'COLLE_TON_TOKEN_ICI') { setSyncStatus('idle'); return; }
+    setSyncStatus('syncing');
+    try {
+      const res = await fetch(GH_API + '?ref=' + GH_BRANCH, {
+        headers: {
+          'Authorization': `token ${GH_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (res.status === 404) {
+        // Fichier n'existe pas encore → on part des données locales
+        ghFileSha = null;
+        setSyncStatus('ok');
+        return;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      ghFileSha = json.sha;
+      const remoteData = JSON.parse(atob(json.content.replace(/
+/g, '')));
+
+      // Merge : on garde le plus grand nombre de prises par jour
+      const localData = loadData();
+      const merged = mergeData(localData, remoteData);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      setSyncStatus('ok');
+      renderToday();
+      renderCalendar && renderCalendar();
+      renderStats();
+    } catch(e) {
+      console.error('GitHub pull error:', e);
+      setSyncStatus('error');
+    }
+  }
+
+  // ── PUSH TO GITHUB ────────────────────────────────────────────
+  async function pushToGitHub(data) {
+    if (GH_TOKEN === 'COLLE_TON_TOKEN_ICI') return;
+    setSyncStatus('syncing');
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+      const body = {
+        message: 'NicoDose sync ' + new Date().toISOString(),
+        content,
+        branch: GH_BRANCH
+      };
+      if (ghFileSha) body.sha = ghFileSha;
+
+      const res = await fetch(GH_API, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${GH_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'HTTP ' + res.status);
+      }
+      const json = await res.json();
+      ghFileSha = json.content.sha;
+      setSyncStatus('ok');
+    } catch(e) {
+      console.error('GitHub push error:', e);
+      setSyncStatus('error');
+    }
+  }
+
+  // ── MERGE (local + remote → union) ────────────────────────────
+  function mergeData(local, remote) {
+    const merged = { ...remote };
+    for (const [day, doses] of Object.entries(local)) {
+      if (!merged[day]) {
+        merged[day] = doses;
+      } else {
+        // On garde toutes les prises des deux sources, dédupliquées par ts
+        const tsSet = new Set(merged[day].map(d => d.ts));
+        for (const dose of doses) {
+          if (!tsSet.has(dose.ts)) { merged[day].push(dose); tsSet.add(dose.ts); }
+        }
+        merged[day].sort((a, b) => a.ts - b.ts);
+      }
+    }
+    return merged;
+  }
+
+  // ── DEBOUNCE PUSH (évite trop d'appels API) ───────────────────
+  function scheduleSyncToGitHub(data) {
+    setSyncStatus('syncing');
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => pushToGitHub(data), 1500);
+  }
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  // ── DOSE ─────────────────────────────────────────────────────
+  function addDose() {
+    const data = loadData();
+    const key = todayKey();
+    if (!data[key]) data[key] = [];
+    const now = new Date();
+    data[key].push({
+      h: now.getHours(),
+      m: now.getMinutes(),
+      s: now.getSeconds(),
+      ts: now.getTime()
+    });
+    saveData(data);
+
+    // Flash
+    const flash = document.getElementById('flash');
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+
+    // Bump counter
+    const num = document.getElementById('counterNum');
+    num.classList.remove('bump');
+    void num.offsetWidth;
+    num.classList.add('bump');
+    setTimeout(() => num.classList.remove('bump'), 150);
+
+    renderToday();
+    renderStats();
+  }
+
+  function deleteDose(key, idx) {
+    const data = loadData();
+    if (!data[key]) return;
+    data[key].splice(idx, 1);
+    if (data[key].length === 0) delete data[key];
+    saveData(data);
+    renderToday();
+    renderStats();
+    if (calSelectedDay) renderDayDetail(calSelectedDay);
+    renderCalendar();
+  }
+
+  function formatTime(d) {
+    return `${String(d.h).padStart(2,'0')}:${String(d.m).padStart(2,'0')}`;
+  }
+
+  function formatTimeFull(d) {
+    return `${String(d.h).padStart(2,'0')}:${String(d.m).padStart(2,'0')}:${String(d.s).padStart(2,'0')}`;
+  }
+
+  function buildDoseItem(dose, key, idx) {
+    const item = document.createElement('div');
+    item.className = 'dose-item';
+    const num = idx + 1;
+    item.innerHTML = `
+      <div class="dose-index">#${String(num).padStart(2,'0')}</div>
+      <div>
+        <div class="dose-time">${formatTime(dose)} <span class="dose-time-seconds">:${String(dose.s).padStart(2,'0')}</span></div>
+      </div>
+      <div class="dose-actions">
+        <button class="dose-edit" onclick="openEditModal('${key}', ${idx})" title="Modifier">✎</button>
+        <button class="dose-delete" onclick="deleteDose('${key}', ${idx})" title="Supprimer">✕</button>
+      </div>
+    `;
+    return item;
+  }
+
+  // ── EDIT MODAL ────────────────────────────────────────────────
+  let editCtx = { key: null, idx: null, h: 0, m: 0, s: 0 };
+
+  function openEditModal(key, idx) {
+    const data = loadData();
+    const dose = data[key][idx];
+    editCtx = { key, idx, h: dose.h, m: dose.m, s: dose.s };
+
+    document.getElementById('modalSub').textContent = `Prise #${String(idx+1).padStart(2,'0')} · ${key}`;
+    document.getElementById('editH').textContent = String(editCtx.h).padStart(2,'0');
+    document.getElementById('editM').textContent = String(editCtx.m).padStart(2,'0');
+    document.getElementById('editS').textContent = String(editCtx.s).padStart(2,'0');
+
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeEditModal(e) {
+    if (e && e.target !== document.getElementById('editModal')) return;
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  function spinTime(field, delta) {
+    if (field === 'h') {
+      editCtx.h = (editCtx.h + delta + 24) % 24;
+      document.getElementById('editH').textContent = String(editCtx.h).padStart(2,'0');
+    } else if (field === 'm') {
+      editCtx.m = (editCtx.m + delta + 60) % 60;
+      document.getElementById('editM').textContent = String(editCtx.m).padStart(2,'0');
+    } else {
+      editCtx.s = (editCtx.s + delta + 60) % 60;
+      document.getElementById('editS').textContent = String(editCtx.s).padStart(2,'0');
+    }
+  }
+
+  function confirmEdit() {
+    const data = loadData();
+    const { key, idx, h, m, s } = editCtx;
+    if (!data[key] || !data[key][idx]) return;
+    data[key][idx].h = h;
+    data[key][idx].m = m;
+    data[key][idx].s = s;
+    const [y, mo, d] = key.split('-');
+    const newDate = new Date(parseInt(y), parseInt(mo)-1, parseInt(d), h, m, s);
+    data[key][idx].ts = newDate.getTime();
+    saveData(data);
+
+    document.getElementById('editModal').classList.remove('open');
+    renderToday();
+    renderStats();
+    if (calSelectedDay) renderDayDetail(calSelectedDay);
+    renderCalendar();
+  }
+
+  // ── TODAY VIEW ────────────────────────────────────────────────
+  function renderToday() {
+    const data = loadData();
+    const key = todayKey();
+    const doses = data[key] || [];
+
+    document.getElementById('counterNum').textContent = doses.length;
+
+    const list = document.getElementById('todayList');
+    list.innerHTML = '';
+
+    if (doses.length === 0) {
+      list.innerHTML = `<div class="empty-state"><span class="empty-icon">◎</span>Aucune prise enregistrée aujourd'hui</div>`;
+      return;
+    }
+
+    // newest first
+    [...doses].reverse().forEach((dose, ri) => {
+      const origIdx = doses.length - 1 - ri;
+      list.appendChild(buildDoseItem(dose, key, origIdx));
+    });
+  }
+
+  // ── HEADER DATE ───────────────────────────────────────────────
+  function updateHeaderDate() {
+    const now = new Date();
+    const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    document.getElementById('headerDate').innerHTML =
+      `${days[now.getDay()]}<span>${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}</span>`;
+  }
+
+  // ── CALENDAR ──────────────────────────────────────────────────
+  let calYear, calMonth, calSelectedDay = null;
+
+  function calInit() {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+    renderCalendar();
+  }
+
+  function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+  function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+  function renderCalendar() {
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    document.getElementById('calMonthLabel').textContent = `${months[calMonth]} ${calYear}`;
+
+    const data = loadData();
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(calYear, calMonth, 1);
+    // Monday-based: 0=Mon...6=Sun
+    let startDow = firstDay.getDay(); // 0=Sun
+    startDow = (startDow === 0) ? 6 : startDow - 1;
+
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = dateKey(today);
+
+    // empty cells
+    for (let i = 0; i < startDow; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell empty';
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const doses = data[key] || [];
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      if (key === todayStr) cell.classList.add('today');
+      if (calSelectedDay === key) cell.classList.add('selected');
+      if (doses.length > 0) cell.classList.add('has-data');
+
+      cell.innerHTML = `<div class="cal-cell-num">${d}</div>${doses.length > 0 ? `<div class="cal-cell-count">${doses.length}</div>` : ''}<div class="cal-dot"></div>`;
+      cell.addEventListener('click', () => {
+        calSelectedDay = key;
+        renderCalendar();
+        renderDayDetail(key);
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderDayDetail(key) {
+    const data = loadData();
+    const doses = data[key] || [];
+    const detail = document.getElementById('dayDetail');
+    const title = document.getElementById('dayDetailTitle');
+    const list = document.getElementById('dayDetailList');
+
+    const [y, m, d] = key.split('-');
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    title.innerHTML = `${d} ${months[parseInt(m)-1]} ${y} <span>${doses.length}</span>`;
+
+    list.innerHTML = '';
+    if (doses.length === 0) {
+      list.innerHTML = `<div class="empty-state" style="padding:12px 0"><span class="empty-icon" style="font-size:1.2rem">◎</span>Aucune prise ce jour</div>`;
+    } else {
+      [...doses].reverse().forEach((dose, ri) => {
+        const origIdx = doses.length - 1 - ri;
+        list.appendChild(buildDoseItem(dose, key, origIdx));
+      });
+    }
+
+    detail.style.display = 'block';
+  }
+
+  // ── STATS ─────────────────────────────────────────────────────
+  function renderStats() {
+    const data = loadData();
+    const today = new Date();
+    const key = dateKey(today);
+    const todayDoses = (data[key] || []).length;
+
+    // 7 days
+    let weekTotal = 0, weekData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const k = dateKey(d);
+      const count = (data[k] || []).length;
+      weekTotal += count;
+      weekData.push({ key: k, count, date: d, isToday: i === 0 });
+    }
+
+    const avg = weekTotal > 0 ? Math.round(weekTotal / 7 * 10) / 10 : 0;
+
+    // All-time max
+    let maxDay = 0;
+    Object.values(data).forEach(v => { if (v.length > maxDay) maxDay = v.length; });
+
+    document.getElementById('statToday').textContent = todayDoses;
+    document.getElementById('statAvg').textContent = avg;
+    document.getElementById('statWeek').textContent = weekTotal;
+    document.getElementById('statMax').textContent = maxDay;
+
+    // Chart
+    const maxCount = Math.max(...weekData.map(d => d.count), 1);
+    const bars = document.getElementById('barsChart');
+    bars.innerHTML = '';
+
+    const dayLetters = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+
+    weekData.forEach(({ count, date, isToday }) => {
+      const pct = (count / maxCount) * 100;
+      const dow = date.getDay(); // 0=Sun
+      const label = dayLetters[(dow === 0) ? 6 : dow - 1];
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      col.innerHTML = `
+        <div class="bar-val">${count > 0 ? count : ''}</div>
+        <div class="bar-fill${isToday ? ' today-bar' : ''}" style="height:${Math.max(pct, 2)}%"></div>
+        <div class="bar-label">${label}</div>
+      `;
+      bars.appendChild(col);
+    });
+  }
+
+  // ── TABS ──────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['today','calendar','stats'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.view').forEach(v => {
+      v.classList.toggle('active', v.id === `view-${name}`);
+    });
+    if (name === 'calendar') renderCalendar();
+    if (name === 'stats') renderStats();
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────
+  updateHeaderDate();
+  setInterval(updateHeaderDate, 30000);
+  renderToday();
+  calInit();
+  renderStats();
+  pullFromGitHub();
+</script>
+</body>
+</html>
