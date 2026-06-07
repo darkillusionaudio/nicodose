@@ -1,0 +1,17 @@
+{
+  "name": "NicoDose",
+  "short_name": "NicoDose",
+  "description": "Suivi journalier des prises de nicotine",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%230a0a0a'/%3E%3Ccircle cx='96' cy='96' r='60' fill='none' stroke='%2300c9b1' stroke-width='6'/%3E%3Cline x1='96' y1='66' x2='96' y2='126' stroke='%2300c9b1' stroke-width='6' stroke-linecap='round'/%3E%3Cline x1='66' y1='96' x2='126' y2='96' stroke='%2300c9b1' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
