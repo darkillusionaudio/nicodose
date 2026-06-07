@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NicoDose" />
+  <title>NicoDose</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f14;
+      --bg2:     #141720;
+      --bg3:     #1c2030;
+      --bg4:     #232840;
+      --teal:    #00e5cc;
+      --teal-dim:#00897b;
+      --teal-glow: rgba(0,229,204,0.18);
+      --amber:   #ffb347;
+      --red:     #ff4f4f;
+      --cream:   #edeae2;
+      --muted:   #606880;
+      --muted2:  #8892a8;
+      --border:  #252b3a;
+      --border2: #2e3550;
+      --success: #00e5cc;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,204,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,204,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border2);
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(13,15,20,0.95) 100%);
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {}
+
+    .app-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.14em;
+      color: var(--teal);
+      line-height: 1;
+      text-shadow: 0 0 24px rgba(0,229,204,0.4);
+    }
+
+    .app-sub {
+      font-size: 0.58rem;
+      color: var(--muted);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .date-display {
+      text-align: right;
+      font-size: 0.6rem;
+      color: var(--muted2);
+      letter-spacing: 0.1em;
+      line-height: 1.5;
+    }
+
+    .date-display strong {
+      display: block;
+      color: var(--cream);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* storage status badge */
+    .storage-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.52rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 2px;
+      border: 1px solid;
+      transition: all 0.3s;
+    }
+
+    .storage-badge.ok {
+      color: var(--teal);
+      border-color: rgba(0,229,204,0.3);
+      background: rgba(0,229,204,0.06);
+    }
+
+    .storage-badge.saving {
+      color: var(--amber);
+      border-color: rgba(255,179,71,0.3);
+      background: rgba(255,179,71,0.06);
+    }
+
+    .storage-badge.error {
+      color: var(--red);
+      border-color: rgba(255,79,79,0.3);
+      background: rgba(255,79,79,0.06);
+    }
+
+    .storage-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .storage-badge.ok .storage-dot { animation: pulse 2.5s ease infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border2);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 11px 0;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: var(--teal);
+      transition: width 0.2s;
+    }
+
+    .tab.active {
+      color: var(--teal);
+    }
+
+    .tab.active::after { width: 60%; }
+
+    /* ── VIEWS ── */
+    .views { flex: 1; overflow: hidden; position: relative; }
+
+    .view {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .view.active { display: flex; }
+
+    .view::-webkit-scrollbar { width: 3px; }
+    .view::-webkit-scrollbar-track { background: transparent; }
+    .view::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* ── COUNTER BLOCK ── */
+    .counter-block {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-top: 3px solid var(--teal);
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .counter-block::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 120px;
+      background: radial-gradient(ellipse at 50% 0%, var(--teal-glow), transparent 70%);
+      pointer-events: none;
+    }
+
+    .counter-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.28em;
+      color: var(--muted2);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .counter-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 6rem;
+      color: var(--teal);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 50px rgba(0,229,204,0.4), 0 0 100px rgba(0,229,204,0.15);
+      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+
+    .counter-number.bump { transform: scale(1.1); }
+
+    .counter-unit {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-top: 6px;
+      position: relative;
+    }
+
+    /* progress bar under counter */
+    .counter-progress {
+      margin-top: 16px;
+      position: relative;
+    }
+
+    .counter-progress-bar {
+      height: 2px;
+      background: var(--border2);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .counter-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal-dim), var(--teal));
+      border-radius: 1px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px var(--teal);
+    }
+
+    .counter-goal-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.52rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      margin-top: 5px;
+    }
+
+    /* ── BIG BUTTON ── */
+    .btn-dose {
+      position: relative;
+      width: 100%;
+      padding: 20px 24px;
+      background: var(--bg3);
+      border: 1px solid var(--teal-dim);
+      color: var(--teal);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.22em;
+      cursor: pointer;
+      transition: all 0.15s;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .btn-dose::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.15s;
+      z-index: 0;
+    }
+
+    .btn-dose:active::before { transform: scaleX(1); }
+    .btn-dose:active { color: var(--bg); }
+    .btn-dose:active .btn-icon-circle { border-color: var(--bg); color: var(--bg); }
+
+    .btn-dose-text { position: relative; z-index: 1; }
+
+    .btn-icon-circle {
+      position: relative;
+      z-index: 1;
+      width: 22px;
+      height: 22px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1;
+      font-family: monospace;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 0.58rem;
+      letter-spacing: 0.28em;
+      color: var(--muted2);
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title-badge {
+      font-size: 0.55rem;
+      color: var(--teal);
+      background: rgba(0,229,204,0.1);
+      border: 1px solid rgba(0,229,204,0.25);
+      padding: 2px 7px;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── DOSE LIST ── */
+    .dose-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .dose-item {
+      display: flex;
+      align-items: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--teal-dim);
+      padding: 11px 14px;
+      animation: slideIn 0.22s ease;
+      gap: 12px;
+      transition: border-left-color 0.2s;
+    }
+
+    .dose-item:hover { border-left-color: var(--teal); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .dose-index {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.05rem;
+      color: var(--teal-dim);
+      min-width: 28px;
+    }
+
+    .dose-info { flex: 1; }
+
+    .dose-time {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: 0.04em;
+    }
+
+    .dose-time-seconds {
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .dose-elapsed {
+      font-size: 0.55rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    .dose-actions {
+      display: flex;
+      gap: 2px;
+    }
+
+    .dose-edit, .dose-delete {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 5px 8px;
+      transition: all 0.18s;
+      line-height: 1;
+      border-radius: 2px;
+    }
+
+    .dose-edit:hover { color: var(--teal); border-color: rgba(0,229,204,0.2); background: rgba(0,229,204,0.05); }
+    .dose-delete:hover { color: var(--red); border-color: rgba(255,79,79,0.2); background: rgba(255,79,79,0.05); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+    }
+
+    .empty-icon {
+      font-size: 2.2rem;
+      display: block;
+      margin-bottom: 12px;
+      opacity: 0.2;
+    }
+
+    /* ── EXPORT SECTION ── */
+    .export-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .btn-small {
+      flex: 1;
+      padding: 10px 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border2);
+      background: var(--bg2);
+      color: var(--muted2);
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-small:hover { border-color: var(--teal-dim); color: var(--teal); background: rgba(0,229,204,0.04); }
+    .btn-small:active { background: rgba(0,229,204,0.1); }
+
+    /* ── CALENDAR ── */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      padding: 12px 16px;
+    }
+
+    .cal-nav button {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--muted2);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .cal-nav button:hover { border-color: var(--teal-dim); color: var(--teal); }
+
+    .cal-month-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.1em;
+      color: var(--cream);
+    }
+
+    .cal-grid-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.56rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      padding: 5px 0;
+      text-transform: uppercase;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+    }
+
+    .cal-cell:hover { border-color: var(--teal-dim); background: var(--bg3); }
+    .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+    .cal-cell.today { border-color: var(--teal); }
+    .cal-cell.today .cal-cell-num { color: var(--teal); font-weight: 700; }
+    .cal-cell.selected { background: var(--bg4); border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+
+    .cal-cell.has-data .cal-dot {
+      width: 5px; height: 5px;
+      background: var(--teal);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+      box-shadow: 0 0 5px var(--teal);
+    }
+
+    .cal-cell-num {
+      font-size: 0.72rem;
+      color: var(--cream);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .cal-cell-count {
+      font-size: 0.52rem;
+      color: var(--teal);
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    /* ── DAY DETAIL ── */
+    .day-detail {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-top: 2px solid var(--teal-dim);
+      padding: 16px;
+    }
+
+    .day-detail-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      color: var(--cream);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .day-detail-title .count-pill {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      color: var(--teal);
+    }
+
+    /* ── STATS ── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-top: 2px solid var(--teal-dim);
+      padding: 16px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 60px; height: 60px;
+      background: radial-gradient(circle, var(--teal-glow), transparent 70%);
+    }
+
+    .stat-card-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.22em;
+      color: var(--muted2);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-card-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      color: var(--teal);
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(0,229,204,0.3);
+    }
+
+    .stat-card-sub {
+      font-size: 0.58rem;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── BAR CHART ── */
+    .chart-bar-container {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      padding: 18px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .chart-title {
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      color: var(--muted2);
+      text-transform: uppercase;
+    }
+
+    .chart-legend {
+      font-size: 0.52rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 90px;
+    }
+
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-fill {
+      width: 100%;
+      background: var(--bg4);
+      border-top: 2px solid var(--teal-dim);
+      min-height: 3px;
+      transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+
+    .bar-fill.today-bar {
+      background: rgba(0,229,204,0.15);
+      border-top-color: var(--teal);
+      box-shadow: 0 -2px 8px var(--teal-glow);
+    }
+
+    .bar-label {
+      font-size: 0.5rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .bar-val {
+      font-size: 0.58rem;
+      color: var(--teal);
+      font-weight: 700;
+      min-height: 10px;
+    }
+
+    /* trend line */
+    .trend-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      font-size: 0.6rem;
+      color: var(--muted2);
+      letter-spacing: 0.1em;
+    }
+
+    .trend-arrow { font-size: 1rem; }
+    .trend-up { color: var(--red); }
+    .trend-down { color: var(--teal); }
+    .trend-flat { color: var(--amber); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-top: 3px solid var(--teal);
+      width: 100%;
+      max-width: 320px;
+      padding: 24px 20px 20px;
+      transform: translateY(16px) scale(0.97);
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.15em;
+      color: var(--teal);
+      margin-bottom: 3px;
+    }
+
+    .modal-sub {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      margin-bottom: 22px;
+    }
+
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-field label {
+      font-size: 0.54rem;
+      letter-spacing: 0.14em;
+      color: var(--muted2);
+      text-transform: uppercase;
+    }
+
+    .time-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+    }
+
+    .time-spinner button {
+      background: none;
+      border: none;
+      color: var(--teal);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 7px 16px;
+      line-height: 1;
+      transition: background 0.15s;
+      width: 100%;
+    }
+
+    .time-spinner button:hover { background: rgba(0,229,204,0.08); }
+
+    .time-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.1rem;
+      color: var(--cream);
+      letter-spacing: 0.05em;
+      padding: 4px 16px;
+      min-width: 64px;
+      text-align: center;
+      border-top: 1px solid var(--border2);
+      border-bottom: 1px solid var(--border2);
+      line-height: 1.25;
+    }
+
+    .time-sep {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.1rem;
+      color: var(--teal-dim);
+      margin-top: 18px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-modal {
+      flex: 1;
+      padding: 13px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      border: 1px solid var(--border2);
+      transition: all 0.15s;
+    }
+
+    .btn-modal-cancel {
+      background: none;
+      color: var(--muted2);
+    }
+
+    .btn-modal-cancel:hover { color: var(--cream); border-color: var(--muted); }
+
+    .btn-modal-confirm {
+      background: var(--teal-dim);
+      border-color: var(--teal);
+      color: var(--cream);
+    }
+
+    .btn-modal-confirm:hover { background: var(--teal); color: var(--bg); }
+
+    /* ── CONFIRM DELETE MODAL ── */
+    #confirmModal .modal { border-top-color: var(--red); }
+    #confirmModal .modal-title { color: var(--red); }
+    .btn-modal-danger { background: rgba(255,79,79,0.15); border-color: var(--red); color: var(--red); }
+    .btn-modal-danger:hover { background: var(--red); color: var(--bg); }
+
+    /* ── FLASH ── */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,229,204,0.05);
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+    }
+
+    .flash.show { animation: flashAnim 0.35s ease; }
+
+    @keyframes flashAnim {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-left: 3px solid var(--teal);
+      color: var(--cream);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      padding: 10px 18px;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: none;
+      z-index: 2000;
+      white-space: nowrap;
+      max-width: calc(100vw - 40px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── LOADING ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.4s;
+    }
+
+    .loading-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      letter-spacing: 0.14em;
+      color: var(--teal);
+      text-shadow: 0 0 30px rgba(0,229,204,0.5);
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--teal-dim);
+      border-radius: 50%;
+      animation: loadPulse 1.2s ease infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes loadPulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); background: var(--teal); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-title">NicoDose</div>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+</div>
+
+<div id="app">
+
+  <header>
+    <div class="header-left">
+      <div class="app-title">NicoDose</div>
+      <div class="app-sub">Suivi des prises · Nicotine</div>
+    </div>
+    <div class="header-right">
+      <div class="date-display" id="headerDate"></div>
+      <div class="storage-badge saving" id="storageBadge">
+        <div class="storage-dot"></div>
+        <span id="storageBadgeText">sync</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">Aujourd'hui</button>
+    <button class="tab" onclick="switchTab('calendar')">Calendrier</button>
+    <button class="tab" onclick="switchTab('stats')">Statistiques</button>
+  </div>
+
+  <div class="views">
+
+    <!-- TODAY -->
+    <div class="view active" id="view-today">
+      <div class="counter-block">
+        <div class="counter-label">Prises aujourd'hui</div>
+        <div class="counter-number" id="counterNum">0</div>
+        <div class="counter-unit">doses enregistrées</div>
+        <div class="counter-progress">
+          <div class="counter-progress-bar">
+            <div class="counter-progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <div class="counter-goal-label">
+            <span>0</span>
+            <span id="goalLabel">objectif : — prises</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-dose" onclick="addDose()">
+        <div class="btn-icon-circle">+</div>
+        <span class="btn-dose-text">Enregistrer une prise</span>
+      </button>
+
+      <div class="section-title">
+        Historique du jour
+        <span class="section-title-badge" id="todayBadge">0</span>
+      </div>
+
+      <div class="dose-list" id="todayList"></div>
+
+      <div class="section-title" style="margin-top:4px">Données</div>
+      <div class="export-row">
+        <button class="btn-small" onclick="exportData()">
+          ↓ Exporter JSON
+        </button>
+        <button class="btn-small" onclick="document.getElementById('importFile').click()">
+          ↑ Importer JSON
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="view" id="view-calendar">
+      <div class="cal-nav">
+        <button onclick="calPrev()">&#8592;</button>
+        <div class="cal-month-label" id="calMonthLabel"></div>
+        <button onclick="calNext()">&#8594;</button>
+      </div>
+
+      <div class="cal-grid-header">
+        <div class="cal-day-name">Lu</div>
+        <div class="cal-day-name">Ma</div>
+        <div class="cal-day-name">Me</div>
+        <div class="cal-day-name">Je</div>
+        <div class="cal-day-name">Ve</div>
+        <div class="cal-day-name">Sa</div>
+        <div class="cal-day-name">Di</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div class="day-detail" id="dayDetail" style="display:none">
+        <div class="day-detail-title" id="dayDetailTitle"></div>
+        <div class="dose-list" id="dayDetailList"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="view" id="view-stats">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-card-label">Aujourd'hui</div>
+          <div class="stat-card-value" id="statToday">0</div>
+          <div class="stat-card-sub">prises</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Moyenne / jour</div>
+          <div class="stat-card-value" id="statAvg">0</div>
+          <div class="stat-card-sub">sur 7 jours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Cette semaine</div>
+          <div class="stat-card-value" id="statWeek">0</div>
+          <div class="stat-card-sub">prises totales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Record / jour</div>
+          <div class="stat-card-value" id="statMax">0</div>
+          <div class="stat-card-sub">prises max</div>
+        </div>
+      </div>
+
+      <div class="chart-bar-container">
+        <div class="chart-header">
+          <div class="chart-title">7 derniers jours</div>
+          <div class="chart-legend" id="chartLegend">—</div>
+        </div>
+        <div class="bars" id="barsChart"></div>
+      </div>
+
+      <div class="trend-indicator" id="trendIndicator">
+        <span class="trend-arrow" id="trendArrow">→</span>
+        <span id="trendText">Calcul de la tendance...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<!-- EDIT TIME MODAL -->
+<div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">Modifier l'heure</div>
+    <div class="modal-sub" id="modalSub">Prise #01</div>
+    <div class="time-inputs">
+      <div class="time-field">
+        <label>Heures</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('h', 1)">▲</button>
+          <div class="time-val" id="editH">00</div>
+          <button onclick="spinTime('h', -1)">▼</button>
+        </div>
+      </div>
+      <div class="time-sep">:</div>
+      <div class="time-field">
+        <label>Minutes</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('m', 1)">▲</button>
+          <div class="time-val" id="editM">00</div>
+          <button onclick="spinTime('m', -1)">▼</button>
+        </div>
+      </div>
+      <div class="time-sep">:</div>
+      <div class="time-field">
+        <label>Secondes</label>
+        <div class="time-spinner">
+          <button onclick="spinTime('s', 1)">▲</button>
+          <div class="time-val" id="editS">00</div>
+          <button onclick="spinTime('s', -1)">▼</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-modal btn-modal-cancel" onclick="closeEditModal()">Annuler</button>
+      <button class="btn-modal btn-modal-confirm" onclick="confirmEdit()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="confirmModal" onclick="closeConfirmModal(event)">
+  <div class="modal">
+    <div class="modal-title">Supprimer</div>
+    <div class="modal-sub" id="confirmModalSub">Confirmer la suppression ?</div>
+    <div class="modal-buttons">
+      <button class="btn-modal btn-modal-cancel" onclick="closeConfirmModal()">Annuler</button>
+      <button class="btn-modal btn-modal-danger" id="confirmDeleteBtn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── STORAGE (persistent via window.storage API) ──────────────
+  const STORAGE_KEY = 'nicodose_data_v1';
+  const GOAL = 10; // daily goal (doses before warning color)
+
+  let appData = {};
+  let storageAvailable = false;
+
+  async function loadData() {
+    try {
+      const result = await window.storage.get(STORAGE_KEY);
+      if (result && result.value) {
+        appData = JSON.parse(result.value);
+      } else {
+        // Try migrating from localStorage
+        const legacy = localStorage.getItem('nicodose_v1');
+        if (legacy) {
+          appData = JSON.parse(legacy);
+          await saveData(); // migrate
+          showToast('Données migrées depuis le stockage local');
+        } else {
+          appData = {};
+        }
+      }
+      storageAvailable = true;
+      setBadge('ok', 'Sauvegardé');
+    } catch (e) {
+      // Fallback: localStorage
+      storageAvailable = false;
+      setBadge('error', 'Local');
+      try { appData = JSON.parse(localStorage.getItem('nicodose_v1')) || {}; }
+      catch { appData = {}; }
+    }
+    return appData;
+  }
+
+  async function saveData() {
+    setBadge('saving', 'Sauvegarde...');
+    try {
+      if (storageAvailable) {
+        await window.storage.set(STORAGE_KEY, JSON.stringify(appData));
+        setBadge('ok', 'Sauvegardé');
+      } else {
+        localStorage.setItem('nicodose_v1', JSON.stringify(appData));
+        setBadge('error', 'Local');
+      }
+    } catch (e) {
+      // fallback to localStorage
+      localStorage.setItem('nicodose_v1', JSON.stringify(appData));
+      setBadge('error', 'Local');
+    }
+  }
+
+  function setBadge(state, text) {
+    const badge = document.getElementById('storageBadge');
+    const label = document.getElementById('storageBadgeText');
+    badge.className = 'storage-badge ' + state;
+    label.textContent = text;
+  }
+
+  // ── KEYS ──────────────────────────────────────────────────────
+  function todayKey() { return dateKey(new Date()); }
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // ── DOSE ─────────────────────────────────────────────────────
+  async function addDose() {
+    const key = todayKey();
+    if (!appData[key]) appData[key] = [];
+    const now = new Date();
+    appData[key].push({ h: now.getHours(), m: now.getMinutes(), s: now.getSeconds(), ts: now.getTime() });
+    await saveData();
+
+    const flash = document.getElementById('flash');
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+
+    const num = document.getElementById('counterNum');
+    num.classList.remove('bump');
+    void num.offsetWidth;
+    num.classList.add('bump');
+    setTimeout(() => num.classList.remove('bump'), 200);
+
+    renderToday();
+    renderStats();
+    showToast('Prise enregistrée');
+  }
+
+  let pendingDelete = null;
+
+  function confirmDeleteDose(key, idx) {
+    pendingDelete = { key, idx };
+    document.getElementById('confirmModalSub').textContent = `Supprimer la prise #${String(idx+1).padStart(2,'0')} ?`;
+    document.getElementById('confirmDeleteBtn').onclick = executeDeletion;
+    document.getElementById('confirmModal').classList.add('open');
+  }
+
+  function closeConfirmModal(e) {
+    if (e && e.target !== document.getElementById('confirmModal')) return;
+    document.getElementById('confirmModal').classList.remove('open');
+    pendingDelete = null;
+  }
+
+  async function executeDeletion() {
+    if (!pendingDelete) return;
+    const { key, idx } = pendingDelete;
+    if (!appData[key]) return;
+    appData[key].splice(idx, 1);
+    if (appData[key].length === 0) delete appData[key];
+    await saveData();
+    document.getElementById('confirmModal').classList.remove('open');
+    pendingDelete = null;
+    renderToday();
+    renderStats();
+    if (calSelectedDay) renderDayDetail(calSelectedDay);
+    renderCalendar();
+    showToast('Prise supprimée');
+  }
+
+  // ── FORMAT ────────────────────────────────────────────────────
+  function formatTime(d) {
+    return `${String(d.h).padStart(2,'0')}:${String(d.m).padStart(2,'0')}`;
+  }
+
+  function formatTimeFull(d) {
+    return `${String(d.h).padStart(2,'0')}:${String(d.m).padStart(2,'0')}:${String(d.s).padStart(2,'0')}`;
+  }
+
+  function formatElapsed(ts) {
+    const diff = Math.floor((Date.now() - ts) / 60000);
+    if (diff < 1) return 'à l\'instant';
+    if (diff < 60) return `il y a ${diff} min`;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return `il y a ${h}h${m > 0 ? String(m).padStart(2,'0') : ''}`;
+  }
+
+  function buildDoseItem(dose, key, idx) {
+    const item = document.createElement('div');
+    item.className = 'dose-item';
+    const isToday = key === todayKey();
+    item.innerHTML = `
+      <div class="dose-index">#${String(idx+1).padStart(2,'0')}</div>
+      <div class="dose-info">
+        <div class="dose-time">${formatTime(dose)}<span class="dose-time-seconds">:${String(dose.s).padStart(2,'0')}</span></div>
+        ${isToday && dose.ts ? `<div class="dose-elapsed">${formatElapsed(dose.ts)}</div>` : ''}
+      </div>
+      <div class="dose-actions">
+        <button class="dose-edit" onclick="openEditModal('${key}', ${idx})" title="Modifier">✎</button>
+        <button class="dose-delete" onclick="confirmDeleteDose('${key}', ${idx})" title="Supprimer">✕</button>
+      </div>
+    `;
+    return item;
+  }
+
+  // ── EDIT MODAL ────────────────────────────────────────────────
+  let editCtx = { key: null, idx: null, h: 0, m: 0, s: 0 };
+
+  function openEditModal(key, idx) {
+    const dose = appData[key][idx];
+    editCtx = { key, idx, h: dose.h, m: dose.m, s: dose.s };
+    document.getElementById('modalSub').textContent = `Prise #${String(idx+1).padStart(2,'0')} · ${key}`;
+    document.getElementById('editH').textContent = String(editCtx.h).padStart(2,'0');
+    document.getElementById('editM').textContent = String(editCtx.m).padStart(2,'0');
+    document.getElementById('editS').textContent = String(editCtx.s).padStart(2,'0');
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeEditModal(e) {
+    if (e && e.target !== document.getElementById('editModal')) return;
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  function spinTime(field, delta) {
+    if (field === 'h') {
+      editCtx.h = (editCtx.h + delta + 24) % 24;
+      document.getElementById('editH').textContent = String(editCtx.h).padStart(2,'0');
+    } else if (field === 'm') {
+      editCtx.m = (editCtx.m + delta + 60) % 60;
+      document.getElementById('editM').textContent = String(editCtx.m).padStart(2,'0');
+    } else {
+      editCtx.s = (editCtx.s + delta + 60) % 60;
+      document.getElementById('editS').textContent = String(editCtx.s).padStart(2,'0');
+    }
+  }
+
+  async function confirmEdit() {
+    const { key, idx, h, m, s } = editCtx;
+    if (!appData[key] || !appData[key][idx]) return;
+    appData[key][idx].h = h;
+    appData[key][idx].m = m;
+    appData[key][idx].s = s;
+    const [y, mo, d] = key.split('-');
+    appData[key][idx].ts = new Date(parseInt(y), parseInt(mo)-1, parseInt(d), h, m, s).getTime();
+    await saveData();
+    document.getElementById('editModal').classList.remove('open');
+    renderToday();
+    renderStats();
+    if (calSelectedDay) renderDayDetail(calSelectedDay);
+    renderCalendar();
+    showToast('Heure modifiée');
+  }
+
+  // ── TODAY VIEW ────────────────────────────────────────────────
+  function renderToday() {
+    const key = todayKey();
+    const doses = appData[key] || [];
+
+    document.getElementById('counterNum').textContent = doses.length;
+    document.getElementById('todayBadge').textContent = doses.length;
+
+    // progress bar
+    const pct = Math.min((doses.length / GOAL) * 100, 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('goalLabel').textContent = `objectif : ${GOAL} prises`;
+
+    const list = document.getElementById('todayList');
+    list.innerHTML = '';
+
+    if (doses.length === 0) {
+      list.innerHTML = `<div class="empty-state"><span class="empty-icon">◎</span>Aucune prise enregistrée aujourd'hui</div>`;
+      return;
+    }
+
+    [...doses].reverse().forEach((dose, ri) => {
+      const origIdx = doses.length - 1 - ri;
+      list.appendChild(buildDoseItem(dose, key, origIdx));
+    });
+  }
+
+  // ── HEADER DATE ───────────────────────────────────────────────
+  function updateHeaderDate() {
+    const now = new Date();
+    const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    document.getElementById('headerDate').innerHTML =
+      `${days[now.getDay()]}<strong>${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}</strong>`;
+  }
+
+  // ── CALENDAR ──────────────────────────────────────────────────
+  let calYear, calMonth, calSelectedDay = null;
+
+  function calInit() {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+    renderCalendar();
+  }
+
+  function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+  function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+  function renderCalendar() {
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    document.getElementById('calMonthLabel').textContent = `${months[calMonth]} ${calYear}`;
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    const firstDay = new Date(calYear, calMonth, 1);
+    let startDow = firstDay.getDay();
+    startDow = (startDow === 0) ? 6 : startDow - 1;
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const todayStr = dateKey(new Date());
+
+    for (let i = 0; i < startDow; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell empty';
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const doses = appData[key] || [];
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      if (key === todayStr) cell.classList.add('today');
+      if (calSelectedDay === key) cell.classList.add('selected');
+      if (doses.length > 0) cell.classList.add('has-data');
+      cell.innerHTML = `<div class="cal-cell-num">${d}</div>${doses.length > 0 ? `<div class="cal-cell-count">${doses.length}</div>` : ''}<div class="cal-dot"></div>`;
+      cell.addEventListener('click', () => {
+        calSelectedDay = key;
+        renderCalendar();
+        renderDayDetail(key);
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderDayDetail(key) {
+    const doses = appData[key] || [];
+    const detail = document.getElementById('dayDetail');
+    const title = document.getElementById('dayDetailTitle');
+    const list = document.getElementById('dayDetailList');
+    const [y, m, d] = key.split('-');
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    title.innerHTML = `${d} ${months[parseInt(m)-1]} ${y} <span class="count-pill">${doses.length}</span>`;
+    list.innerHTML = '';
+    if (doses.length === 0) {
+      list.innerHTML = `<div class="empty-state" style="padding:12px 0"><span class="empty-icon" style="font-size:1.2rem">◎</span>Aucune prise ce jour</div>`;
+    } else {
+      [...doses].reverse().forEach((dose, ri) => {
+        const origIdx = doses.length - 1 - ri;
+        list.appendChild(buildDoseItem(dose, key, origIdx));
+      });
+    }
+    detail.style.display = 'block';
+  }
+
+  // ── STATS ─────────────────────────────────────────────────────
+  function renderStats() {
+    const today = new Date();
+    const key = dateKey(today);
+    const todayDoses = (appData[key] || []).length;
+
+    let weekTotal = 0, weekData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const k = dateKey(d);
+      const count = (appData[k] || []).length;
+      weekTotal += count;
+      weekData.push({ key: k, count, date: d, isToday: i === 0 });
+    }
+
+    const avg = weekTotal > 0 ? Math.round(weekTotal / 7 * 10) / 10 : 0;
+    let maxDay = 0;
+    Object.values(appData).forEach(v => { if (Array.isArray(v) && v.length > maxDay) maxDay = v.length; });
+
+    document.getElementById('statToday').textContent = todayDoses;
+    document.getElementById('statAvg').textContent = avg;
+    document.getElementById('statWeek').textContent = weekTotal;
+    document.getElementById('statMax').textContent = maxDay;
+    document.getElementById('chartLegend').textContent = `moy. ${avg}/j`;
+
+    // Bars
+    const maxCount = Math.max(...weekData.map(d => d.count), 1);
+    const bars = document.getElementById('barsChart');
+    bars.innerHTML = '';
+    const dayLetters = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+
+    weekData.forEach(({ count, date, isToday }) => {
+      const pct = (count / maxCount) * 100;
+      const dow = date.getDay();
+      const label = dayLetters[(dow === 0) ? 6 : dow - 1];
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      col.innerHTML = `
+        <div class="bar-val">${count > 0 ? count : ''}</div>
+        <div class="bar-fill${isToday ? ' today-bar' : ''}" style="height:${Math.max(pct, 3)}%"></div>
+        <div class="bar-label">${label}</div>
+      `;
+      bars.appendChild(col);
+    });
+
+    // Trend
+    const first3 = weekData.slice(0, 3).reduce((s, d) => s + d.count, 0) / 3;
+    const last3  = weekData.slice(4, 7).reduce((s, d) => s + d.count, 0) / 3;
+    const diff = last3 - first3;
+    const trendArrow = document.getElementById('trendArrow');
+    const trendText  = document.getElementById('trendText');
+    if (diff > 0.5) {
+      trendArrow.textContent = '↑';
+      trendArrow.className = 'trend-arrow trend-up';
+      trendText.textContent = `En hausse · +${diff.toFixed(1)} prises/j vs début de semaine`;
+    } else if (diff < -0.5) {
+      trendArrow.textContent = '↓';
+      trendArrow.className = 'trend-arrow trend-down';
+      trendText.textContent = `En baisse · ${diff.toFixed(1)} prises/j vs début de semaine`;
+    } else {
+      trendArrow.textContent = '→';
+      trendArrow.className = 'trend-arrow trend-flat';
+      trendText.textContent = `Stable · consommation régulière cette semaine`;
+    }
+  }
+
+  // ── TABS ──────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['today','calendar','stats'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.view').forEach(v => {
+      v.classList.toggle('active', v.id === `view-${name}`);
+    });
+    if (name === 'calendar') renderCalendar();
+    if (name === 'stats') renderStats();
+  }
+
+  // ── EXPORT / IMPORT ───────────────────────────────────────────
+  function exportData() {
+    const json = JSON.stringify(appData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nicodose_${todayKey()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Export téléchargé');
+  }
+
+  async function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      // Merge: prefer imported data but keep existing days not in file
+      Object.assign(appData, parsed);
+      await saveData();
+      renderToday();
+      renderCalendar();
+      renderStats();
+      showToast(`Import réussi · ${Object.keys(parsed).length} jours chargés`);
+    } catch (e) {
+      showToast('Erreur lors de l\'import');
+    }
+    event.target.value = '';
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────
+  async function init() {
+    updateHeaderDate();
+    setInterval(updateHeaderDate, 30000);
+
+    await loadData();
+
+    renderToday();
+    calInit();
+    renderStats();
+
+    // Hide loading
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 400);
+  }
+
+  init();
+</script>
+</body>
+</html>
